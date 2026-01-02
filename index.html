@@ -4,55 +4,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theo dõi Công tác Tổ - v2.10</title>
+    <title>Theo dõi Công tác Tổ - v2.11</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #f0f4f8; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; max-width: 1100px; margin: 0 auto; padding: 20px; background-color: #f0f4f8; }
         .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); }
         .version { font-size: 0.8em; color: #999; text-align: right; margin-bottom: 10px; }
-        h1 { color: #1e3a8a; text-align: center; text-transform: uppercase; margin-bottom: 20px; }
-        
-        .today-card { background: white; border-top: 5px solid #2563eb; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        .date-title { color: #2563eb; font-weight: bold; font-size: 1.4em; display: block; margin-bottom: 15px; text-align: center; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
-        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; vertical-align: top; }
-        th { background-color: #f8fafc; color: #334155; font-weight: 600; }
-        tr:nth-child(even) { background-color: #fdfdfd; }
-
-        .import-zone { background: #f8fafc; padding: 20px; border-radius: 12px; border: 2px dashed #cbd5e1; }
-        .btn { background: #2563eb; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1em; }
-        .btn:hover { background: #1d4ed8; }
-        #status { margin: 15px 0; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; }
-        .success { background: #dcfce7; color: #166534; }
-        .error { background: #fee2e2; color: #991b1b; }
+        h1 { color: #1e3a8a; text-align: center; text-transform: uppercase; margin-bottom: 20px; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
+        .today-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; padding: 20px; }
+        .date-title { color: #2563eb; font-weight: bold; font-size: 1.5em; display: block; margin-bottom: 15px; text-align: center; background: #eff6ff; padding: 10px; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 0.95em; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; vertical-align: top; }
+        th { background-color: #2563eb; color: white; font-weight: 600; text-transform: uppercase; position: sticky; top: 0; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .import-zone { background: #fffbeb; padding: 20px; border-radius: 12px; border: 2px dashed #f59e0b; margin-top: 30px; }
+        .btn { background: #059669; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1.1em; }
+        .btn:hover { background: #047857; }
+        #status { margin: 15px 0; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; white-space: pre-line; }
+        .success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="version">Version: 2.10 (2026-01-03)</div>
-    <h1>Lịch Công Tác Tổ</h1>
+    <div class="version">Version: 2.11 (2026-01-03)</div>
+    <h1>LỊCH CÔNG TÁC TỔ</h1>
 
     <div class="today-card">
-        <span class="date-title" id="currentDateDisplay">Đang tải ngày...</span>
-        <div id="displayArea" style="overflow-x: auto;">Đang kết nối dữ liệu...</div>
+        <span class="date-title" id="currentDateDisplay">Đang tải...</span>
+        <div id="displayArea" style="overflow-x: auto;">Kết nối dữ liệu...</div>
     </div>
 
     <div class="import-zone">
-        <h3>Cập nhật dữ liệu từ Excel</h3>
-        <p><small>Hệ thống sẽ lấy từ dòng 10, giữ nguyên các cột nội dung.</small></p>
+        <h3>Cập nhật Lịch từ Excel</h3>
+        <p>• <b>Cấu hình:</b> Dòng 9 tiêu đề, dữ liệu từ dòng 10. Cột B (Thứ), Cột C (Ngày).</p>
         <input type="file" id="excelFile" accept=".xlsx, .xls">
         <div id="status"></div>
-        
         <div id="previewContainer" style="display:none">
-            <h4>Bản xem trước dữ liệu trích xuất:</h4>
-            <div style="overflow-x: auto;">
-                <table id="previewTable"></table>
-            </div>
-            <button id="btnConfirm" class="btn">LƯU LỊCH NÀY VÀO HỆ THỐNG</button>
+            <button id="btnConfirm" class="btn">XÁC NHẬN LƯU TẤT CẢ DỮ LIỆU</button>
         </div>
     </div>
 </div>
@@ -65,13 +56,13 @@
         databaseURL: "https://tavietnam-78ae8-default-rtdb.firebaseio.com",
         storageBucket: "tavietnam-78ae8.firebasestorage.app", 
         messagingSenderId: "670121705534", 
-        appId: "1:670121705534:web:1027ad98550573ad37116f" 
+        appId: "1:1:670121705534:web:1027ad98550573ad37116f" 
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let parsedData = [];
-    let tableHeaders = [];
+    let headers = [];
 
     const daysOfWeek = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
@@ -80,117 +71,86 @@
         const todayName = daysOfWeek[now.getDay()];
         document.getElementById('currentDateDisplay').innerText = todayName + ", " + now.toLocaleDateString('vi-VN');
 
-        db.ref('scheduleData').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val) {
-                tableHeaders = val.headers || [];
-                renderTodayTable(val.rows || [], todayName);
-            } else {
-                document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu. Vui lòng import file.";
-            }
+        db.ref('scheduleData_v2').on('value', (snap) => {
+            const val = snap.val();
+            if (val) renderToday(val.rows || [], val.headers || [], todayName);
+            else document.getElementById('displayArea').innerHTML = "Dữ liệu trống.";
         });
     }
 
-    function renderTodayTable(rows, todayName) {
-        let filteredRows = rows.filter(r => (r[0] || "").toString().toLowerCase().includes(todayName.toLowerCase()));
+    function renderToday(rows, headers, todayName) {
+        // Lọc dòng dựa trên cột B (index 1)
+        let todayRows = rows.filter(r => (r[1] || "").toString().toLowerCase().includes(todayName.toLowerCase()));
         
-        if (filteredRows.length === 0) {
-            document.getElementById('displayArea').innerHTML = "Không có lịch công tác cho hôm nay.";
+        if (todayRows.length === 0) {
+            document.getElementById('displayArea').innerHTML = "<b>Không có lịch cho ngày hôm nay.</b>";
             return;
         }
 
         let html = "<table><thead><tr>";
-        tableHeaders.forEach(h => html += `<th>${h}</th>`);
+        headers.forEach(h => html += `<th>${h}</th>`);
         html += "</tr></thead><tbody>";
-        
-        filteredRows.forEach(row => {
-            html += "<tr>";
-            row.forEach(cell => html += `<td>${cell || ""}</td>`);
-            html += "</tr>";
+        todayRows.forEach(row => {
+            html += "<tr>" + row.map(cell => `<td>${cell || ""}</td>`).join("") + "</tr>";
         });
         html += "</tbody></table>";
         document.getElementById('displayArea').innerHTML = html;
     }
 
     document.getElementById('excelFile').onchange = function(e) {
-        const file = e.target.files[0];
         const reader = new FileReader();
-        reader.onload = function(evt) {
+        reader.onload = (evt) => {
             const workbook = XLSX.read(evt.target.result, { type: 'binary' });
-            let targetSheetName = workbook.SheetNames.find(name => name.toUpperCase().startsWith("DKKHC")) || workbook.SheetNames[0];
-            const sheet = workbook.Sheets[targetSheetName];
-            const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+            let sheetName = workbook.SheetNames.find(n => n.toUpperCase().startsWith("DKKHC")) || workbook.SheetNames[0];
+            const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: "" });
 
-            if (rawData.length < 9) {
-                showStatus("File không đủ 10 dòng dữ liệu.", "error");
-                return;
-            }
+            if (data.length < 10) { showStatus("File không đủ dữ liệu dòng 10.", "error"); return; }
 
-            // Dòng 9 là tiêu đề (index 8)
-            tableHeaders = rawData[8].filter(h => h !== "");
-            const headerCount = tableHeaders.length;
+            // Lấy tiêu đề dòng 9 (index 8)
+            headers = data[8].filter(h => h.trim() !== "");
+            const colLimit = headers.length;
 
             parsedData = [];
-            let lastDay = "";
+            let lastThu = "";
+            let lastNgay = "";
 
             // Duyệt từ dòng 10 (index 9)
-            for (let i = 9; i < rawData.length; i++) {
-                const row = rawData[i];
-                // Lấy đúng số lượng cột theo tiêu đề
-                const cleanRow = row.slice(0, headerCount);
+            for (let i = 9; i < data.length; i++) {
+                let row = data[i].slice(0, colLimit);
                 
-                if (cleanRow.some(cell => cell.toString().trim() !== "")) {
-                    if (cleanRow[0] !== "") {
-                        lastDay = cleanRow[0];
-                    } else {
-                        cleanRow[0] = lastDay; // Điền bù ngày nếu ô bị gộp (A trống)
-                    }
-                    parsedData.push(cleanRow);
-                }
+                // Nếu dòng hoàn toàn trống thì bỏ qua
+                if (row.every(c => c.toString().trim() === "")) continue;
+
+                // Xử lý Gộp ô cho Cột B (Thứ - index 1) và Cột C (Ngày - index 2)
+                if (row[1] !== "") lastThu = row[1]; else row[1] = lastThu;
+                if (row[2] !== "") lastNgay = row[2]; else row[2] = lastNgay;
+
+                parsedData.push(row);
             }
 
             if (parsedData.length > 0) {
-                showPreview();
-                showStatus("Trích xuất thành công dòng 10 trở đi từ sheet: " + targetSheetName, "success");
-            } else {
-                showStatus("Không tìm thấy dữ benevolence dữ liệu từ dòng 10.", "error");
+                document.getElementById('previewContainer').style.display = "block";
+                showStatus(`✅ Đã tìm thấy ${parsedData.length} dòng dữ liệu.\nSheet: ${sheetName}`, "success");
             }
         };
-        reader.readAsBinaryString(file);
+        reader.readAsBinaryString(e.target.files[0]);
     };
 
-    function showPreview() {
-        let html = "<thead><tr>";
-        tableHeaders.forEach(h => html += `<th>${h}</th>`);
-        html += "</tr></thead><tbody>";
-        parsedData.slice(0, 5).forEach(row => {
-            html += "<tr>";
-            row.forEach(cell => html += `<td>${cell}</td>`);
-            html += "</tr>";
-        });
-        html += "</tbody>";
-        document.getElementById('previewTable').innerHTML = html;
-        document.getElementById('previewContainer').style.display = "block";
-    }
-
-    function showStatus(msg, type) {
+    function showStatus(m, c) {
         const s = document.getElementById('status');
-        s.innerText = msg;
-        s.className = type;
+        s.innerText = m; s.className = c;
     }
 
     document.getElementById('btnConfirm').onclick = function() {
-        db.ref('scheduleData').set({
-            headers: tableHeaders,
-            rows: parsedData
-        }).then(() => {
-            alert("Đã lưu lịch thành công!");
+        this.disabled = true;
+        this.innerText = "ĐANG LƯU...";
+        db.ref('scheduleData_v2').set({ headers: headers, rows: parsedData }).then(() => {
+            alert("Lưu thành công!");
             location.reload();
         });
     };
 
     loadFromFirebase();
 </script>
-
 </body>
 </html>
