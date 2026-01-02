@@ -4,49 +4,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theo dõi Công tác Tổ - v2.5</title>
+    <title>Theo dõi Công tác Tổ - v2.6</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f8f9fa; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
-        .version { font-size: 0.8em; color: #888; text-align: right; margin-bottom: 10px; }
-        h1 { color: #2c3e50; text-align: center; margin-bottom: 25px; font-size: 1.5em; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .today-card { background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%); border: 1px solid #d1e3f8; padding: 20px; border-radius: 12px; margin-bottom: 20px; min-height: 100px; }
-        .date-title { color: #007bff; font-weight: bold; font-size: 1.2em; margin-bottom: 15px; display: block; }
-        .work-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 5px solid #28a745; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-size: 1.1em; }
-        .import-zone { background: #fff3cd; padding: 15px; border-radius: 10px; margin-top: 30px; border: 1px solid #ffeeba; }
-        .btn { background: #28a745; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        #status { font-weight: bold; color: #856404; margin: 10px 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f7f9; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .version { font-size: 0.8em; color: #999; text-align: right; margin-bottom: 10px; }
+        h1 { color: #1e3a8a; text-align: center; margin-bottom: 20px; font-size: 1.4em; text-transform: uppercase; }
+        .today-card { background: #fff; border: 2px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; position: relative; }
+        .date-title { color: #2563eb; font-weight: bold; font-size: 1.3em; margin-bottom: 15px; display: block; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; }
+        .work-item { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #10b981; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .import-zone { background: #eff6ff; padding: 20px; border-radius: 12px; border: 1px dashed #3b82f6; margin-top: 30px; }
+        .btn { background: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn:hover { background: #1d4ed8; }
+        #status { font-weight: bold; color: #1e40af; margin: 10px 0; text-align: center; }
+        .conn-status { font-size: 0.8em; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="version">Version: 2.5 (2026-01-03)</div>
-    <h1>LỊCH CÔNG TÁC HÀNG NGÀY</h1>
+    <div class="version">Version: 2.6 (2026-01-03)</div>
+    <h1>Lịch Công Tác Tổ</h1>
 
     <div class="today-card">
-        <span class="date-title" id="currentDateDisplay">Đang tải...</span>
-        <div id="displayArea">Đang nỗ lực kết nối máy chủ...</div>
+        <span class="date-title" id="currentDateDisplay">Đang tải ngày...</span>
+        <div id="displayArea">Đang kết nối đến Firebase...</div>
+        <div id="connInfo" class="conn-status"></div>
     </div>
 
     <div class="import-zone">
-        <strong>Cập nhật lịch mới (.xlsx)</strong><br>
-        <input type="file" id="excelFile" accept=".xlsx, .xls" style="margin: 10px 0;">
+        <label><strong>Cập nhật File Excel (Dữ liệu từ dòng 10):</strong></label><br><br>
+        <input type="file" id="excelFile" accept=".xlsx, .xls">
         <div id="status"></div>
-        <button id="btnConfirm" class="btn" style="display:none">Xác nhận Lưu Lịch</button>
+        <button id="btnConfirm" class="btn" style="display:none">XÁC NHẬN LƯU LỊCH TUẦN</button>
     </div>
 </div>
 
 <script>
-    // Cấu hình có bổ sung databaseURL
     const firebaseConfig = { 
         apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", 
         authDomain: "tavietnam-78ae8.firebaseapp.com", 
         projectId: "tavietnam-78ae8", 
-        databaseURL: "https://tavietnam-78ae8-default-rtdb.firebaseio.com", // Đảm bảo đúng URL
+        databaseURL: "https://tavietnam-78ae8-default-rtdb.firebaseio.com",
         storageBucket: "tavietnam-78ae8.firebasestorage.app", 
         messagingSenderId: "670121705534", 
         appId: "1:670121705534:web:1027ad98550573ad37116f" 
@@ -56,6 +58,18 @@
     const db = firebase.database();
     let parsedData = [];
 
+    // Kiểm tra kết nối thực tế
+    db.ref(".info/connected").on("value", (snap) => {
+        const info = document.getElementById('connInfo');
+        if (snap.val() === true) {
+            info.innerHTML = "🟢 Đã kết nối máy chủ";
+            info.style.color = "green";
+        } else {
+            info.innerHTML = "🔴 Đang chờ kết nối...";
+            info.style.color = "red";
+        }
+    });
+
     const daysOfWeek = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
     function loadFromFirebase() {
@@ -63,23 +77,13 @@
         const todayName = daysOfWeek[now.getDay()];
         document.getElementById('currentDateDisplay').innerText = todayName + ", " + now.toLocaleDateString('vi-VN');
 
-        // Thêm timeout để thông báo nếu kết nối quá lâu
-        const timer = setTimeout(() => {
-            if(document.getElementById('displayArea').innerText.includes("nỗ lực")) {
-                document.getElementById('displayArea').innerHTML = "<b style='color:red'>Lỗi: Không thể kết nối.</b><br>Vui lòng kiểm tra lại 1. Mạng internet hoặc 2. Firebase Database đã được tạo (Create Database) chưa?";
-            }
-        }, 5000);
-
         db.ref('currentWeekSchedule').on('value', (snapshot) => {
-            clearTimeout(timer);
             const data = snapshot.val();
             if (data) {
                 renderTodaySchedule(data, todayName);
             } else {
-                document.getElementById('displayArea').innerHTML = "Dữ liệu trống. Hãy chọn file Excel để bắt đầu.";
+                document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu lịch tuần. Vui lòng chọn file Excel bên dưới.";
             }
-        }, (error) => {
-            document.getElementById('displayArea').innerHTML = "Lỗi Firebase: " + error.message;
         });
     }
 
@@ -89,12 +93,13 @@
         const dataArr = Array.isArray(data) ? data : Object.values(data);
 
         dataArr.forEach(item => {
+            // Kiểm tra nội dung ngày có khớp với hôm nay không
             if (item.day && item.day.toString().toLowerCase().includes(todayName.toLowerCase())) {
                 html += `<div class="work-item">${item.content}</div>`;
                 found = true;
             }
         });
-        document.getElementById('displayArea').innerHTML = found ? html : "Hôm nay không có lịch trong dữ liệu đã lưu.";
+        document.getElementById('displayArea').innerHTML = found ? html : "Hôm nay không tìm thấy lịch công tác.";
     }
 
     document.getElementById('excelFile').onchange = function(e) {
@@ -104,38 +109,54 @@
             const data = evt.target.result;
             const workbook = XLSX.read(data, { type: 'binary' });
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            // Đọc toàn bộ file thành mảng 2 chiều
             const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
             parsedData = [];
-            json.forEach(row => {
-                const dayValue = row[0] ? row[0].toString().trim() : "";
-                // Kiểm tra nếu ô đầu tiên chứa chữ "thứ" hoặc "chủ nhật"
-                if (dayValue.toLowerCase().startsWith("thứ") || dayValue.toLowerCase().startsWith("chủ nhật")) {
+            // QUAN TRỌNG: Duyệt từ dòng 10 (index 9)
+            for (let i = 9; i < json.length; i++) {
+                const row = json[i];
+                if (!row || row.length === 0) continue;
+
+                const dayCol = row[0] ? row[0].toString().trim() : "";
+                
+                // Kiểm tra xem dòng này có phải là dòng bắt đầu của một ngày không
+                if (dayCol.toLowerCase().includes("thứ") || dayCol.toLowerCase().includes("chủ nhật")) {
                     parsedData.push({
-                        day: dayValue,
-                        content: row.slice(1).filter(c => c).join(" | ")
+                        day: dayCol,
+                        content: row.slice(1).filter(cell => cell != null && cell !== "").join(" | ")
                     });
+                } else if (parsedData.length > 0 && row.some(cell => cell)) {
+                    // Nếu dòng này không có tên "Thứ" nhưng có dữ liệu, gộp vào ngày đã tìm thấy trước đó
+                    parsedData[parsedData.length - 1].content += " <br> " + row.filter(cell => cell).join(" | ");
                 }
-            });
+            }
 
             if (parsedData.length > 0) {
-                document.getElementById('status').innerText = "Đã tìm thấy " + parsedData.length + " ngày công tác.";
+                document.getElementById('status').innerText = "✅ Đã trích xuất xong lịch cho " + parsedData.length + " ngày.";
                 document.getElementById('btnConfirm').style.display = "block";
             } else {
-                alert("Không tìm thấy dòng nào bắt đầu bằng 'Thứ...' trong file.");
+                alert("Không tìm thấy dữ liệu từ dòng 10 trở đi. Vui lòng kiểm tra lại file.");
             }
         };
         reader.readAsBinaryString(file);
     };
 
     document.getElementById('btnConfirm').onclick = function() {
+        this.disabled = true;
+        this.innerText = "ĐANG LƯU...";
         db.ref('currentWeekSchedule').set(parsedData)
         .then(() => {
-            alert("Đã lưu lịch thành công!");
+            alert("Đã cập nhật lịch tuần thành công!");
             document.getElementById('btnConfirm').style.display = "none";
             document.getElementById('status').innerText = "";
+            this.disabled = false;
+            this.innerText = "XÁC NHẬN LƯU LỊCH TUẦN";
         })
-        .catch(err => alert("Lỗi ghi dữ liệu: " + err.message));
+        .catch(err => {
+            alert("Lỗi: " + err.message);
+            this.disabled = false;
+        });
     };
 
     loadFromFirebase();
