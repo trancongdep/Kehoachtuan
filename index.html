@@ -4,49 +4,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theo dõi Công tác Tổ - v2.9</title>
+    <title>Theo dõi Công tác Tổ - v2.10</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; max-width: 850px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #f0f4f8; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); }
         .version { font-size: 0.8em; color: #999; text-align: right; margin-bottom: 10px; }
-        h1 { color: #1e3a8a; text-align: center; margin-bottom: 20px; font-size: 1.4em; }
-        .today-card { background: #fff; border: 2px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .date-title { color: #2563eb; font-weight: bold; font-size: 1.3em; margin-bottom: 15px; display: block; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .work-item { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #10b981; white-space: pre-line; }
-        .import-zone { background: #fffbeb; padding: 20px; border-radius: 12px; border: 1px solid #fef3c7; margin-top: 30px; }
-        .preview-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85em; }
-        .preview-table th, .preview-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .preview-table th { background: #f3f4f6; }
-        .btn { background: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
-        #status { font-weight: bold; color: #b45309; margin: 10px 0; }
+        h1 { color: #1e3a8a; text-align: center; text-transform: uppercase; margin-bottom: 20px; }
+        
+        .today-card { background: white; border-top: 5px solid #2563eb; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .date-title { color: #2563eb; font-weight: bold; font-size: 1.4em; display: block; margin-bottom: 15px; text-align: center; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; vertical-align: top; }
+        th { background-color: #f8fafc; color: #334155; font-weight: 600; }
+        tr:nth-child(even) { background-color: #fdfdfd; }
+
+        .import-zone { background: #f8fafc; padding: 20px; border-radius: 12px; border: 2px dashed #cbd5e1; }
+        .btn { background: #2563eb; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1em; }
+        .btn:hover { background: #1d4ed8; }
+        #status { margin: 15px 0; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; }
+        .success { background: #dcfce7; color: #166534; }
+        .error { background: #fee2e2; color: #991b1b; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="version">Version: 2.9 (2026-01-03)</div>
+    <div class="version">Version: 2.10 (2026-01-03)</div>
     <h1>Lịch Công Tác Tổ</h1>
 
     <div class="today-card">
-        <span class="date-title" id="currentDateDisplay">Đang tải...</span>
-        <div id="displayArea">Đang kết nối dữ liệu...</div>
+        <span class="date-title" id="currentDateDisplay">Đang tải ngày...</span>
+        <div id="displayArea" style="overflow-x: auto;">Đang kết nối dữ liệu...</div>
     </div>
 
     <div class="import-zone">
-        <strong>Cập nhật File (.xlsx) - Lấy dữ liệu từ dòng 10</strong><br><br>
+        <h3>Cập nhật dữ liệu từ Excel</h3>
+        <p><small>Hệ thống sẽ lấy từ dòng 10, giữ nguyên các cột nội dung.</small></p>
         <input type="file" id="excelFile" accept=".xlsx, .xls">
         <div id="status"></div>
         
         <div id="previewContainer" style="display:none">
-            <p><b>Dữ liệu trích xuất được (Vui lòng kiểm tra trước khi lưu):</b></p>
-            <table class="preview-table" id="previewTable">
-                <thead><tr><th>Cột A (Thứ)</th><th>Nội dung trích xuất</th></tr></thead>
-                <tbody></tbody>
-            </table>
-            <button id="btnConfirm" class="btn">XÁC NHẬN LƯU LỊCH NÀY</button>
+            <h4>Bản xem trước dữ liệu trích xuất:</h4>
+            <div style="overflow-x: auto;">
+                <table id="previewTable"></table>
+            </div>
+            <button id="btnConfirm" class="btn">LƯU LỊCH NÀY VÀO HỆ THỐNG</button>
         </div>
     </div>
 </div>
@@ -65,6 +71,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let parsedData = [];
+    let tableHeaders = [];
 
     const daysOfWeek = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
@@ -73,24 +80,36 @@
         const todayName = daysOfWeek[now.getDay()];
         document.getElementById('currentDateDisplay').innerText = todayName + ", " + now.toLocaleDateString('vi-VN');
 
-        db.ref('currentWeekSchedule').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) renderTodaySchedule(data, todayName);
-            else document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu trong hệ thống.";
+        db.ref('scheduleData').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+                tableHeaders = val.headers || [];
+                renderTodayTable(val.rows || [], todayName);
+            } else {
+                document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu. Vui lòng import file.";
+            }
         });
     }
 
-    function renderTodaySchedule(data, todayName) {
-        let html = "";
-        let found = false;
-        const dataArr = Array.isArray(data) ? data : Object.values(data);
-        dataArr.forEach(item => {
-            if ((item.day || "").toString().toLowerCase().includes(todayName.toLowerCase())) {
-                html += `<div class="work-item">${item.content}</div>`;
-                found = true;
-            }
+    function renderTodayTable(rows, todayName) {
+        let filteredRows = rows.filter(r => (r[0] || "").toString().toLowerCase().includes(todayName.toLowerCase()));
+        
+        if (filteredRows.length === 0) {
+            document.getElementById('displayArea').innerHTML = "Không có lịch công tác cho hôm nay.";
+            return;
+        }
+
+        let html = "<table><thead><tr>";
+        tableHeaders.forEach(h => html += `<th>${h}</th>`);
+        html += "</tr></thead><tbody>";
+        
+        filteredRows.forEach(row => {
+            html += "<tr>";
+            row.forEach(cell => html += `<td>${cell || ""}</td>`);
+            html += "</tr>";
         });
-        document.getElementById('displayArea').innerHTML = found ? html : "Hôm nay không có lịch.";
+        html += "</tbody></table>";
+        document.getElementById('displayArea').innerHTML = html;
     }
 
     document.getElementById('excelFile').onchange = function(e) {
@@ -100,49 +119,72 @@
             const workbook = XLSX.read(evt.target.result, { type: 'binary' });
             let targetSheetName = workbook.SheetNames.find(name => name.toUpperCase().startsWith("DKKHC")) || workbook.SheetNames[0];
             const sheet = workbook.Sheets[targetSheetName];
-            
-            // Đọc dạng mảng để giữ đúng số thứ tự dòng
             const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-            
-            parsedData = [];
-            const tbody = document.querySelector("#previewTable tbody");
-            tbody.innerHTML = "";
 
-            // Duyệt từ dòng 10 (index 9) đến hết
+            if (rawData.length < 9) {
+                showStatus("File không đủ 10 dòng dữ liệu.", "error");
+                return;
+            }
+
+            // Dòng 9 là tiêu đề (index 8)
+            tableHeaders = rawData[8].filter(h => h !== "");
+            const headerCount = tableHeaders.length;
+
+            parsedData = [];
+            let lastDay = "";
+
+            // Duyệt từ dòng 10 (index 9)
             for (let i = 9; i < rawData.length; i++) {
                 const row = rawData[i];
-                if (!row || row.length === 0) continue;
-
-                const colA = row[0] ? row[0].toString().trim() : "";
-                const content = row.slice(1).map(c => c.toString().trim()).filter(c => c !== "").join(" | ");
-
-                if (colA !== "" || content !== "") {
-                    if (colA !== "") {
-                        parsedData.push({ day: colA, content: content });
-                    } else if (parsedData.length > 0) {
-                        parsedData[parsedData.length - 1].content += "\n" + content;
+                // Lấy đúng số lượng cột theo tiêu đề
+                const cleanRow = row.slice(0, headerCount);
+                
+                if (cleanRow.some(cell => cell.toString().trim() !== "")) {
+                    if (cleanRow[0] !== "") {
+                        lastDay = cleanRow[0];
+                    } else {
+                        cleanRow[0] = lastDay; // Điền bù ngày nếu ô bị gộp (A trống)
                     }
-                    
-                    // Thêm vào bảng xem trước để người dùng kiểm tra
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `<td>${colA}</td><td>${content}</td>`;
-                    tbody.appendChild(tr);
+                    parsedData.push(cleanRow);
                 }
             }
 
             if (parsedData.length > 0) {
-                document.getElementById('previewContainer').style.display = "block";
-                document.getElementById('status').innerText = `✅ Đã đọc xong Sheet: ${targetSheetName}`;
+                showPreview();
+                showStatus("Trích xuất thành công dòng 10 trở đi từ sheet: " + targetSheetName, "success");
             } else {
-                document.getElementById('status').innerText = "❌ Không tìm thấy dữ liệu từ dòng 10. Vui lòng kiểm tra lại file.";
+                showStatus("Không tìm thấy dữ benevolence dữ liệu từ dòng 10.", "error");
             }
         };
         reader.readAsBinaryString(file);
     };
 
+    function showPreview() {
+        let html = "<thead><tr>";
+        tableHeaders.forEach(h => html += `<th>${h}</th>`);
+        html += "</tr></thead><tbody>";
+        parsedData.slice(0, 5).forEach(row => {
+            html += "<tr>";
+            row.forEach(cell => html += `<td>${cell}</td>`);
+            html += "</tr>";
+        });
+        html += "</tbody>";
+        document.getElementById('previewTable').innerHTML = html;
+        document.getElementById('previewContainer').style.display = "block";
+    }
+
+    function showStatus(msg, type) {
+        const s = document.getElementById('status');
+        s.innerText = msg;
+        s.className = type;
+    }
+
     document.getElementById('btnConfirm').onclick = function() {
-        db.ref('currentWeekSchedule').set(parsedData).then(() => {
-            alert("Đã lưu thành công!");
+        db.ref('scheduleData').set({
+            headers: tableHeaders,
+            rows: parsedData
+        }).then(() => {
+            alert("Đã lưu lịch thành công!");
             location.reload();
         });
     };
