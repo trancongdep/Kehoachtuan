@@ -4,62 +4,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theo dõi Công tác Tổ - v2.12</title>
+    <title>Theo dõi Công tác Tổ - v2.13</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; max-width: 1100px; margin: 0 auto; padding: 20px; background-color: #f0f4f8; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; max-width: 1100px; margin: 0 auto; padding: 20px; background-color: #f4f6f9; }
         .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); }
         .version { font-size: 0.8em; color: #999; text-align: right; margin-bottom: 10px; }
         h1 { color: #1e3a8a; text-align: center; text-transform: uppercase; margin-bottom: 20px; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
         
-        .control-panel { background: #eff6ff; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .date-select { padding: 10px 20px; font-size: 1.1em; border-radius: 5px; border: 2px solid #2563eb; color: #1e3a8a; font-weight: bold; cursor: pointer; }
+        .control-panel { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .date-select { padding: 12px 25px; font-size: 1.1em; border-radius: 8px; border: 2px solid #2563eb; color: #1e3a8a; font-weight: bold; cursor: pointer; background-color: #f8faff; min-width: 250px; }
         
         .today-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 0.95em; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
         th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; vertical-align: top; }
         th { background-color: #2563eb; color: white; text-transform: uppercase; }
         tr:hover { background-color: #f1f5f9; }
 
-        .import-zone { background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-top: 40px; }
+        .import-zone { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-top: 40px; }
         .btn-save { background: #059669; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; }
-        #status { margin-top: 10px; font-weight: bold; text-align: center; }
-        .success { color: #166534; }
+        #status { margin-top: 10px; font-weight: bold; text-align: center; color: #166534; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="version">Version: 2.12 (2026-01-03)</div>
+    <div class="version">Version: 2.13 (2026-01-03)</div>
     <h1>LỊCH CÔNG TÁC TỔ</h1>
 
     <div class="control-panel">
-        <label for="dayPicker"><b>CHỌN NGÀY XEM LỊCH:</b></label>
-        <select id="dayPicker" class="date-select" onchange="changeDayView()">
-            <option value="Thứ Hai">Thứ Hai</option>
-            <option value="Thứ Ba">Thứ Ba</option>
-            <option value="Thứ Tư">Thứ Tư</option>
-            <option value="Thứ Năm">Thứ Năm</option>
-            <option value="Thứ Sáu">Thứ Sáu</option>
-            <option value="Thứ Bảy">Thứ Bảy</option>
-            <option value="Chủ Nhật">Chủ Nhật</option>
+        <label for="datePicker"><b>CHỌN NGÀY CẦN XEM:</b></label>
+        <select id="datePicker" class="date-select" onchange="updateViewByDate()">
+            <option value="">Đang tải dữ liệu...</option>
         </select>
-        <div id="selectedDateText" style="color: #64748b; font-style: italic;"></div>
     </div>
 
     <div class="today-card">
-        <div id="displayArea" style="overflow-x: auto;">Đang tải dữ liệu lịch...</div>
+        <div id="displayArea" style="overflow-x: auto;">Đang kết nối dữ liệu Firebase...</div>
     </div>
 
     <div class="import-zone">
         <details>
-            <summary style="cursor:pointer; color: #64748b;">Cập nhật dữ liệu mới (Admin)</summary>
+            <summary style="cursor:pointer; color: #64748b; font-size: 0.9em;">Quản lý dữ liệu (Admin)</summary>
             <div style="padding-top:15px;">
                 <input type="file" id="excelFile" accept=".xlsx, .xls">
                 <div id="status"></div>
-                <button id="btnConfirm" class="btn-save" style="display:none">XÁC NHẬN LƯU LỊCH MỚI</button>
+                <button id="btnConfirm" class="btn-save" style="display:none">XÁC NHẬN LƯU LỊCH</button>
             </div>
         </details>
     </div>
@@ -81,46 +73,76 @@
     
     let allRows = [];
     let allHeaders = [];
-    const daysArr = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
-    // 1. Khởi tạo: Đặt mặc định là ngày hiện tại
-    function init() {
-        const now = new Date();
-        const todayName = daysArr[now.getDay()];
-        document.getElementById('dayPicker').value = todayName;
-        loadData();
-    }
-
+    // Tải dữ liệu từ Firebase
     function loadData() {
         db.ref('scheduleData_v2').on('value', (snap) => {
             const val = snap.val();
             if (val) {
                 allRows = val.rows || [];
                 allHeaders = val.headers || [];
-                changeDayView(); // Hiển thị theo ngày đang chọn trong dropdown
+                populateDateDropdown();
             } else {
-                document.getElementById('displayArea').innerHTML = "Dữ liệu trống. Vui lòng import file Excel.";
+                document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu. Vui lòng import file Excel.";
             }
         });
     }
 
-    // 2. Thay đổi hiển thị khi chọn ngày khác
-    function changeDayView() {
-        const selectedDay = document.getElementById('dayPicker').value;
-        renderTable(selectedDay);
-    }
+    // Tạo danh sách chọn Ngày từ Cột C
+    function populateDateDropdown() {
+        const picker = document.getElementById('datePicker');
+        picker.innerHTML = "";
 
-    function renderTable(targetDay) {
-        // Lọc dữ liệu theo Cột B (index 1)
-        let filtered = allRows.filter(r => (r[1] || "").toString().toLowerCase().includes(targetDay.toLowerCase()));
-        
-        if (filtered.length === 0) {
-            document.getElementById('displayArea').innerHTML = `<p style="text-align:center; padding:20px;">Không có lịch công tác cho <b>${targetDay}</b>.</p>`;
+        // Lấy danh sách ngày duy nhất từ cột C (index 2)
+        const uniqueDates = [];
+        const dateMap = {}; // Để lưu Thứ tương ứng với Ngày
+
+        allRows.forEach(row => {
+            const dateVal = (row[2] || "").toString().trim();
+            const dayVal = (row[1] || "").toString().trim();
+            if (dateVal && !uniqueDates.includes(dateVal)) {
+                uniqueDates.push(dateVal);
+                dateMap[dateVal] = dayVal;
+            }
+        });
+
+        if (uniqueDates.length === 0) {
+            picker.innerHTML = "<option>Không có dữ liệu ngày</option>";
             return;
         }
 
-        // Cập nhật text phụ (Ngày tháng ở cột C - index 2 của dòng đầu tiên tìm thấy)
-        document.getElementById('selectedDateText').innerText = "Ngày: " + (filtered[0][2] || "---");
+        // Thêm các option vào dropdown
+        uniqueDates.forEach(date => {
+            const option = document.createElement('option');
+            option.value = date;
+            option.text = `${date} (${dateMap[date]})`;
+            picker.appendChild(option);
+        });
+
+        // Mặc định chọn ngày hôm nay nếu tìm thấy
+        const todayStr = new Date().toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '/');
+        // Thử tìm ngày khớp (ví dụ: 03/01/2026)
+        const foundToday = uniqueDates.find(d => d.includes(todayStr.substring(0, 5))); 
+        
+        if (foundToday) {
+            picker.value = foundToday;
+        }
+
+        updateViewByDate();
+    }
+
+    // Cập nhật bảng khi chọn ngày
+    function updateViewByDate() {
+        const selectedDate = document.getElementById('datePicker').value;
+        if (!selectedDate) return;
+
+        // Lọc dữ liệu theo cột C (index 2)
+        let filtered = allRows.filter(r => (r[2] || "").toString().trim() === selectedDate);
+        
+        if (filtered.length === 0) {
+            document.getElementById('displayArea').innerHTML = "Không có nội dung cho ngày này.";
+            return;
+        }
 
         let html = "<table><thead><tr>";
         allHeaders.forEach(h => html += `<th>${h}</th>`);
@@ -133,7 +155,7 @@
         document.getElementById('displayArea').innerHTML = html;
     }
 
-    // 3. Xử lý Import File
+    // Xử lý Import File Excel
     document.getElementById('excelFile').onchange = function(e) {
         const reader = new FileReader();
         reader.onload = (evt) => {
@@ -152,7 +174,7 @@
                 let row = data[i].slice(0, tempHeaders.length);
                 if (row.every(c => c.toString().trim() === "")) continue;
 
-                // Điền bù Cột B (index 1) và Cột C (index 2)
+                // Xử lý Gộp ô: Cột B (Thứ - index 1) và Cột C (Ngày - index 2)
                 if (row[1] !== "") lastThu = row[1]; else row[1] = lastThu;
                 if (row[2] !== "") lastNgay = row[2]; else row[2] = lastNgay;
 
@@ -162,7 +184,7 @@
             if (tempParsed.length > 0) {
                 window.newParsedData = { headers: tempHeaders, rows: tempParsed };
                 document.getElementById('btnConfirm').style.display = "block";
-                document.getElementById('status').innerHTML = `<span class="success">Đã trích xuất ${tempParsed.length} dòng. Nhấn Lưu để hoàn tất.</span>`;
+                document.getElementById('status').innerText = `✅ Đã đọc thành công ${tempParsed.length} dòng dữ liệu.`;
             }
         };
         reader.readAsBinaryString(e.target.files[0]);
@@ -170,12 +192,12 @@
 
     document.getElementById('btnConfirm').onclick = function() {
         db.ref('scheduleData_v2').set(window.newParsedData).then(() => {
-            alert("Đã cập nhật lịch tuần thành công!");
+            alert("Đã cập nhật lịch thành công!");
             location.reload();
         });
     };
 
-    init();
+    loadData();
 </script>
 </body>
 </html>
