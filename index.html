@@ -4,39 +4,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theo dõi Công tác Tổ - v2.8</title>
+    <title>Theo dõi Công tác Tổ - v2.9</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f7f9; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; max-width: 850px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; }
         .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         .version { font-size: 0.8em; color: #999; text-align: right; margin-bottom: 10px; }
-        h1 { color: #1e3a8a; text-align: center; margin-bottom: 20px; font-size: 1.4em; text-transform: uppercase; }
-        .today-card { background: #fff; border: 2px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; min-height: 120px; }
-        .date-title { color: #2563eb; font-weight: bold; font-size: 1.3em; margin-bottom: 15px; display: block; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; }
-        .work-item { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #10b981; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 1.1em; white-space: pre-line; }
-        .import-zone { background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1px dashed #22c55e; margin-top: 30px; }
+        h1 { color: #1e3a8a; text-align: center; margin-bottom: 20px; font-size: 1.4em; }
+        .today-card { background: #fff; border: 2px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .date-title { color: #2563eb; font-weight: bold; font-size: 1.3em; margin-bottom: 15px; display: block; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .work-item { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #10b981; white-space: pre-line; }
+        .import-zone { background: #fffbeb; padding: 20px; border-radius: 12px; border: 1px solid #fef3c7; margin-top: 30px; }
+        .preview-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85em; }
+        .preview-table th, .preview-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .preview-table th { background: #f3f4f6; }
         .btn { background: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
-        #status { font-weight: bold; color: #1e40af; margin: 10px 0; text-align: center; white-space: pre-line; }
+        #status { font-weight: bold; color: #b45309; margin: 10px 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="version">Version: 2.8 (2026-01-03)</div>
+    <div class="version">Version: 2.9 (2026-01-03)</div>
     <h1>Lịch Công Tác Tổ</h1>
 
     <div class="today-card">
-        <span class="date-title" id="currentDateDisplay">Đang tải ngày...</span>
-        <div id="displayArea">Đang kết nối đến Firebase...</div>
+        <span class="date-title" id="currentDateDisplay">Đang tải...</span>
+        <div id="displayArea">Đang kết nối dữ liệu...</div>
     </div>
 
     <div class="import-zone">
-        <label><strong>Cập nhật File Excel (Dữ liệu từ dòng 10):</strong></label><br><br>
+        <strong>Cập nhật File (.xlsx) - Lấy dữ liệu từ dòng 10</strong><br><br>
         <input type="file" id="excelFile" accept=".xlsx, .xls">
         <div id="status"></div>
-        <button id="btnConfirm" class="btn" style="display:none">XÁC NHẬN LƯU LỊCH</button>
+        
+        <div id="previewContainer" style="display:none">
+            <p><b>Dữ liệu trích xuất được (Vui lòng kiểm tra trước khi lưu):</b></p>
+            <table class="preview-table" id="previewTable">
+                <thead><tr><th>Cột A (Thứ)</th><th>Nội dung trích xuất</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <button id="btnConfirm" class="btn">XÁC NHẬN LƯU LỊCH NÀY</button>
+        </div>
     </div>
 </div>
 
@@ -64,11 +75,8 @@
 
         db.ref('currentWeekSchedule').on('value', (snapshot) => {
             const data = snapshot.val();
-            if (data) {
-                renderTodaySchedule(data, todayName);
-            } else {
-                document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu. Hãy import file Excel.";
-            }
+            if (data) renderTodaySchedule(data, todayName);
+            else document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu trong hệ thống.";
         });
     }
 
@@ -76,58 +84,57 @@
         let html = "";
         let found = false;
         const dataArr = Array.isArray(data) ? data : Object.values(data);
-
         dataArr.forEach(item => {
-            // Kiểm tra xem dòng dữ liệu có chứa tên thứ hôm nay không
-            const dayStr = (item.day || "").toString().toLowerCase();
-            if (dayStr.includes(todayName.toLowerCase())) {
+            if ((item.day || "").toString().toLowerCase().includes(todayName.toLowerCase())) {
                 html += `<div class="work-item">${item.content}</div>`;
                 found = true;
             }
         });
-        document.getElementById('displayArea').innerHTML = found ? html : "Hôm nay không có lịch công tác.";
+        document.getElementById('displayArea').innerHTML = found ? html : "Hôm nay không có lịch.";
     }
 
     document.getElementById('excelFile').onchange = function(e) {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = function(evt) {
-            const data = evt.target.result;
-            const workbook = XLSX.read(data, { type: 'binary' });
-            
-            let targetSheetName = workbook.SheetNames.find(name => name.toUpperCase().startsWith("DKKHC"));
-            if (!targetSheetName) targetSheetName = workbook.SheetNames[0]; // Nếu không thấy DKKHC thì lấy sheet 1
-
+            const workbook = XLSX.read(evt.target.result, { type: 'binary' });
+            let targetSheetName = workbook.SheetNames.find(name => name.toUpperCase().startsWith("DKKHC")) || workbook.SheetNames[0];
             const sheet = workbook.Sheets[targetSheetName];
-            const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-
+            
+            // Đọc dạng mảng để giữ đúng số thứ tự dòng
+            const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+            
             parsedData = [];
-            // Bắt đầu quét từ dòng 10 (index 9)
-            for (let i = 9; i < json.length; i++) {
-                const row = json[i];
+            const tbody = document.querySelector("#previewTable tbody");
+            tbody.innerHTML = "";
+
+            // Duyệt từ dòng 10 (index 9) đến hết
+            for (let i = 9; i < rawData.length; i++) {
+                const row = rawData[i];
                 if (!row || row.length === 0) continue;
 
                 const colA = row[0] ? row[0].toString().trim() : "";
-                // Kết hợp các cột còn lại làm nội dung
-                const otherCols = row.slice(1).map(c => c.toString().trim()).filter(c => c !== "").join(" | ");
+                const content = row.slice(1).map(c => c.toString().trim()).filter(c => c !== "").join(" | ");
 
-                if (colA !== "") {
-                    // Nếu cột A có dữ liệu -> Coi là một ngày mới/mục mới
-                    parsedData.push({
-                        day: colA,
-                        content: otherCols
-                    });
-                } else if (parsedData.length > 0 && otherCols !== "") {
-                    // Nếu cột A trống nhưng cột khác có dữ liệu -> Gộp vào ngày trước đó
-                    parsedData[parsedData.length - 1].content += "\n" + otherCols;
+                if (colA !== "" || content !== "") {
+                    if (colA !== "") {
+                        parsedData.push({ day: colA, content: content });
+                    } else if (parsedData.length > 0) {
+                        parsedData[parsedData.length - 1].content += "\n" + content;
+                    }
+                    
+                    // Thêm vào bảng xem trước để người dùng kiểm tra
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${colA}</td><td>${content}</td>`;
+                    tbody.appendChild(tr);
                 }
             }
 
             if (parsedData.length > 0) {
-                document.getElementById('status').innerText = `✅ Đã đọc Sheet: ${targetSheetName}\nTìm thấy ${parsedData.length} mục dữ liệu từ dòng 10.`;
-                document.getElementById('btnConfirm').style.display = "block";
+                document.getElementById('previewContainer').style.display = "block";
+                document.getElementById('status').innerText = `✅ Đã đọc xong Sheet: ${targetSheetName}`;
             } else {
-                document.getElementById('status').innerText = `❌ Lỗi: Đã đọc dòng 10 trở đi nhưng không thấy nội dung.\n(Sheet: ${targetSheetName})`;
+                document.getElementById('status').innerText = "❌ Không tìm thấy dữ liệu từ dòng 10. Vui lòng kiểm tra lại file.";
             }
         };
         reader.readAsBinaryString(file);
@@ -135,7 +142,7 @@
 
     document.getElementById('btnConfirm').onclick = function() {
         db.ref('currentWeekSchedule').set(parsedData).then(() => {
-            alert("Lưu thành công!");
+            alert("Đã lưu thành công!");
             location.reload();
         });
     };
