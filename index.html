@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theo dõi Công tác Tổ - v2.3</title>
+    <title>Theo dõi Công tác Tổ - v2.4</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -13,33 +13,32 @@
         .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
         .version { font-size: 0.8em; color: #888; text-align: right; margin-bottom: 10px; }
         h1 { color: #2c3e50; text-align: center; margin-bottom: 25px; font-size: 1.5em; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .today-card { background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%); border: 1px solid #d1e3f8; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .today-card { background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%); border: 1px solid #d1e3f8; padding: 20px; border-radius: 12px; margin-bottom: 20px; min-height: 100px; }
         .date-title { color: #007bff; font-weight: bold; font-size: 1.2em; margin-bottom: 15px; display: block; }
         .work-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #007bff; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
         .import-zone { background: #f1f3f4; padding: 15px; border-radius: 10px; margin-top: 30px; }
         .btn { background: #28a745; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn-save { background: #007bff; margin-top: 10px; }
+        .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 10px; padding: 10px; border: 1px solid #f5c6cb; border-radius: 5px; background: #f8d7da; }
         .hidden { display: none; }
-        #status { font-style: italic; color: #666; margin-top: 5px; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="version">Version: 2.3 (2026-01-03)</div>
+    <div class="version">Version: 2.4 (2026-01-03)</div>
     <h1>LỊCH CÔNG TÁC HÀNG NGÀY</h1>
 
     <div class="today-card">
         <span class="date-title" id="currentDateDisplay">Đang tải...</span>
-        <div id="displayArea">Đang kiểm tra dữ liệu từ máy chủ...</div>
+        <div id="displayArea">Đang kết nối đến máy chủ...</div>
     </div>
 
     <div class="import-zone">
         <strong>Cập nhật lịch mới (File .xlsx)</strong><br>
         <input type="file" id="excelFile" accept=".xlsx, .xls" style="margin: 10px 0;">
         <div id="previewZone" class="hidden">
-            <p style="color: #d9534f; font-weight: bold;">Đã trích xuất nội dung lịch. Nhấn xác nhận để lưu:</p>
-            <button class="btn btn-save" onclick="saveData()">Xác nhận & Lưu lên Firebase</button>
+            <button class="btn btn-save" id="btnConfirm">Xác nhận & Lưu lên Firebase</button>
         </div>
         <div id="status"></div>
     </div>
@@ -61,85 +60,79 @@
 
     const daysOfWeek = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
-    // 1. Tải dữ liệu từ Firebase khi mở app
     function loadFromFirebase() {
         const now = new Date();
         const todayName = daysOfWeek[now.getDay()];
         document.getElementById('currentDateDisplay').innerText = todayName + ", " + now.toLocaleDateString('vi-VN');
 
-        db.ref('currentWeekSchedule').once('value').then((snapshot) => {
+        // Thêm catch để bắt lỗi kết nối (ví dụ lỗi Permission Denied)
+        db.ref('currentWeekSchedule').once('value')
+        .then((snapshot) => {
             const data = snapshot.val();
-            if (data && Array.isArray(data)) {
+            if (data) {
                 renderTodaySchedule(data, todayName);
             } else {
-                document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu lịch tuần. Vui lòng import file Excel.";
+                document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu. Vui lòng import file Excel phía dưới.";
             }
+        })
+        .catch((error) => {
+            console.error(error);
+            document.getElementById('displayArea').innerHTML = `<div class="error-msg">Lỗi kết nối Firebase: ${error.message}<br><br>Có thể bạn cần cấu hình lại Rule trên Firebase Console (xem hướng dẫn đi kèm).</div>`;
         });
     }
 
-    // 2. Hiển thị lịch của ngày hôm nay
     function renderTodaySchedule(data, todayName) {
         let html = "";
         let found = false;
+        // Chuyển object thành mảng nếu cần
+        const dataArr = Array.isArray(data) ? data : Object.values(data);
 
-        data.forEach(item => {
-            // Kiểm tra xem dòng dữ liệu có chứa tên thứ của hôm nay không
-            if (item.day && item.day.toLowerCase().includes(todayName.toLowerCase())) {
+        dataArr.forEach(item => {
+            if (item.day && item.day.toString().toLowerCase().includes(todayName.toLowerCase())) {
                 html += `<div class="work-item">${item.content}</div>`;
                 found = true;
             }
         });
-
         document.getElementById('displayArea').innerHTML = found ? html : "Không có lịch công tác cho hôm nay.";
     }
 
-    // 3. Xử lý File Excel
     document.getElementById('excelFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
         const reader = new FileReader();
-        document.getElementById('status').innerText = "Đang xử lý file...";
-
         reader.onload = function(evt) {
             const data = evt.target.result;
             const workbook = XLSX.read(data, { type: 'binary' });
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-            // Trích lọc thông tin: Bỏ tiêu đề, chỉ lấy dòng có chứa Thứ...
             parsedData = [];
             json.forEach(row => {
-                const rowString = row.join(" ").trim();
-                if (rowString && (rowString.toLowerCase().includes("thứ") || rowString.toLowerCase().includes("chủ nhật"))) {
-                    // Cấu trúc: { day: "Thứ Hai", content: "Nội dung công việc..." }
+                const cell0 = row[0] ? row[0].toString() : "";
+                if (cell0 && (cell0.toLowerCase().includes("thứ") || cell0.toLowerCase().includes("chủ nhật"))) {
                     parsedData.push({
-                        day: row[0] || "", 
-                        content: row.slice(1).join(" - ").replace(/^ - /, "")
+                        day: cell0, 
+                        content: row.slice(1).filter(c => c).join(" - ")
                     });
                 }
             });
 
             if (parsedData.length > 0) {
                 document.getElementById('previewZone').classList.remove('hidden');
-                document.getElementById('status').innerText = "Trích xuất thành công " + parsedData.length + " mục.";
-            } else {
-                document.getElementById('status').innerText = "Không tìm thấy dữ liệu lịch phù hợp trong file.";
+                document.getElementById('status').innerText = "Đã trích xuất " + parsedData.length + " mục.";
             }
         };
         reader.readAsBinaryString(file);
     });
 
-    // 4. Lưu vào Firebase
-    function saveData() {
-        db.ref('currentWeekSchedule').set(parsedData).then(() => {
-            alert("Lịch tuần đã được lưu trữ thành công!");
-            document.getElementById('previewZone').classList.add('hidden');
-            loadFromFirebase();
-        }).catch(err => {
-            alert("Lỗi khi lưu: " + err);
-        });
-    }
+    document.getElementById('btnConfirm').onclick = function() {
+        db.ref('currentWeekSchedule').set(parsedData)
+        .then(() => {
+            alert("Đã lưu lịch thành công!");
+            location.reload();
+        })
+        .catch(err => alert("Lỗi khi lưu: " + err.message));
+    };
 
-    // Khởi chạy khi tải trang
     loadFromFirebase();
 </script>
 
