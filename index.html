@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theo dõi Công tác Tổ - v2.7</title>
+    <title>Theo dõi Công tác Tổ - v2.8</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -18,14 +18,13 @@
         .work-item { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #10b981; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 1.1em; white-space: pre-line; }
         .import-zone { background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1px dashed #22c55e; margin-top: 30px; }
         .btn { background: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
-        #status { font-weight: bold; color: #1e40af; margin: 10px 0; text-align: center; }
-        .sheet-info { font-size: 0.85em; color: #666; font-style: italic; }
+        #status { font-weight: bold; color: #1e40af; margin: 10px 0; text-align: center; white-space: pre-line; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="version">Version: 2.7 (2026-01-03)</div>
+    <div class="version">Version: 2.8 (2026-01-03)</div>
     <h1>Lịch Công Tác Tổ</h1>
 
     <div class="today-card">
@@ -34,11 +33,10 @@
     </div>
 
     <div class="import-zone">
-        <label><strong>Cập nhật File Excel (Sheet DKKHC...):</strong></label><br>
-        <span class="sheet-info">* Ứng dụng sẽ tự tìm Sheet kế hoạch và lấy từ dòng 10.</span><br><br>
+        <label><strong>Cập nhật File Excel (Dữ liệu từ dòng 10):</strong></label><br><br>
         <input type="file" id="excelFile" accept=".xlsx, .xls">
         <div id="status"></div>
-        <button id="btnConfirm" class="btn" style="display:none">XÁC NHẬN LƯU LỊCH VÀO HỆ THỐNG</button>
+        <button id="btnConfirm" class="btn" style="display:none">XÁC NHẬN LƯU LỊCH</button>
     </div>
 </div>
 
@@ -69,10 +67,8 @@
             if (data) {
                 renderTodaySchedule(data, todayName);
             } else {
-                document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu. Vui lòng chọn file Excel để bắt đầu.";
+                document.getElementById('displayArea').innerHTML = "Chưa có dữ liệu. Hãy import file Excel.";
             }
-        }, (error) => {
-            document.getElementById('displayArea').innerHTML = "Lỗi Firebase: " + error.message;
         });
     }
 
@@ -82,12 +78,14 @@
         const dataArr = Array.isArray(data) ? data : Object.values(data);
 
         dataArr.forEach(item => {
-            if (item.day && item.day.toString().toLowerCase().includes(todayName.toLowerCase())) {
+            // Kiểm tra xem dòng dữ liệu có chứa tên thứ hôm nay không
+            const dayStr = (item.day || "").toString().toLowerCase();
+            if (dayStr.includes(todayName.toLowerCase())) {
                 html += `<div class="work-item">${item.content}</div>`;
                 found = true;
             }
         });
-        document.getElementById('displayArea').innerHTML = found ? html : "Hôm nay không có lịch công tác trong hệ thống.";
+        document.getElementById('displayArea').innerHTML = found ? html : "Hôm nay không có lịch công tác.";
     }
 
     document.getElementById('excelFile').onchange = function(e) {
@@ -97,62 +95,48 @@
             const data = evt.target.result;
             const workbook = XLSX.read(data, { type: 'binary' });
             
-            // TÌM SHEET CÓ TÊN BẮT ĐẦU BẰNG "DKKHC"
             let targetSheetName = workbook.SheetNames.find(name => name.toUpperCase().startsWith("DKKHC"));
-            
-            if (!targetSheetName) {
-                alert("Không tìm thấy Sheet nào có tên bắt đầu bằng 'DKKHC'. Vui lòng kiểm tra lại file Excel.");
-                return;
-            }
+            if (!targetSheetName) targetSheetName = workbook.SheetNames[0]; // Nếu không thấy DKKHC thì lấy sheet 1
 
             const sheet = workbook.Sheets[targetSheetName];
-            const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
 
             parsedData = [];
-            // Duyệt từ dòng 10 (index 9)
+            // Bắt đầu quét từ dòng 10 (index 9)
             for (let i = 9; i < json.length; i++) {
                 const row = json[i];
                 if (!row || row.length === 0) continue;
 
-                const dayCol = row[0] ? row[0].toString().trim() : "";
-                
-                // Logic: Nếu cột đầu tiên có chữ Thứ hoặc Chủ Nhật thì là ngày mới
-                if (dayCol.toLowerCase().includes("thứ") || dayCol.toLowerCase().includes("chủ nhật")) {
+                const colA = row[0] ? row[0].toString().trim() : "";
+                // Kết hợp các cột còn lại làm nội dung
+                const otherCols = row.slice(1).map(c => c.toString().trim()).filter(c => c !== "").join(" | ");
+
+                if (colA !== "") {
+                    // Nếu cột A có dữ liệu -> Coi là một ngày mới/mục mới
                     parsedData.push({
-                        day: dayCol,
-                        content: row.slice(1).filter(cell => cell != null && cell !== "").join(" | ")
+                        day: colA,
+                        content: otherCols
                     });
-                } else if (parsedData.length > 0 && row.some(cell => cell)) {
-                    // Nếu là dòng phụ (không có tên thứ), cộng dồn nội dung vào ngày trước đó
-                    let additionalContent = row.filter(cell => cell != null && cell !== "").join(" | ");
-                    if (additionalContent) {
-                        parsedData[parsedData.length - 1].content += "\n" + additionalContent;
-                    }
+                } else if (parsedData.length > 0 && otherCols !== "") {
+                    // Nếu cột A trống nhưng cột khác có dữ liệu -> Gộp vào ngày trước đó
+                    parsedData[parsedData.length - 1].content += "\n" + otherCols;
                 }
             }
 
             if (parsedData.length > 0) {
-                document.getElementById('status').innerText = `✅ Đã tìm thấy Sheet: ${targetSheetName}\nTrích xuất thành công lịch ${parsedData.length} ngày.`;
+                document.getElementById('status').innerText = `✅ Đã đọc Sheet: ${targetSheetName}\nTìm thấy ${parsedData.length} mục dữ liệu từ dòng 10.`;
                 document.getElementById('btnConfirm').style.display = "block";
             } else {
-                alert("Dữ liệu từ dòng 10 trở đi trống hoặc không đúng định dạng.");
+                document.getElementById('status').innerText = `❌ Lỗi: Đã đọc dòng 10 trở đi nhưng không thấy nội dung.\n(Sheet: ${targetSheetName})`;
             }
         };
         reader.readAsBinaryString(file);
     };
 
     document.getElementById('btnConfirm').onclick = function() {
-        this.disabled = true;
-        db.ref('currentWeekSchedule').set(parsedData)
-        .then(() => {
-            alert("Đã cập nhật lịch tuần vào Firebase!");
-            document.getElementById('btnConfirm').style.display = "none";
-            document.getElementById('status').innerText = "";
-            this.disabled = false;
-        })
-        .catch(err => {
-            alert("Lỗi lưu dữ liệu: " + err.message);
-            this.disabled = false;
+        db.ref('currentWeekSchedule').set(parsedData).then(() => {
+            alert("Lưu thành công!");
+            location.reload();
         });
     };
 
